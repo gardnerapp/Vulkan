@@ -6,7 +6,7 @@
 # Blog: https://d3ext.github.io
 # Contact: <d3ext@proton.me>
 
-# Use this tool under your own responsability!
+# Use this tool under your own responsibility!
 
 require "colorize"
 require "httparty"
@@ -790,7 +790,9 @@ def main()
   if opts[:file]
     file = File.open(opts[:file])
     file_data = file.read
+
     file.close
+    file.force_encoding("ISO-8859-1").encode("UTF-8", replace: nil)
     puts "[+] File: #{opts[:file]}\n".green
 
   elsif opts[:payload]
