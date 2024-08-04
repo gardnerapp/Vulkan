@@ -792,7 +792,7 @@ def main()
     file_data = file.read
 
     file.close
-    file.force_encoding("ISO-8859-1").encode("UTF-8", replace: nil)
+    file_data.force_encoding("ISO-8859-1").encode("UTF-8", replace: nil)
     puts "[+] File: #{opts[:file]}\n".green
 
   elsif opts[:payload]
